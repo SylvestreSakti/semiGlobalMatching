@@ -1,10 +1,20 @@
 import numpy as np
 import cv2
+import os
 
-for i in range(1,40) :
-    img1 = cv2.imread("images/blend ("+str(i)+").jpg")
-    img2 = cv2.imread("images/blend (" + str(i+1) + ").jpg")
 
+def find_image_files(input_directory):
+    files_list = os.listdir(input_directory)
+    images_list = []
+    for filename in files_list:
+        if filename[-4:] in ['.jpg','jpeg','.png'] :
+            print(filename)
+            images_list.append(os.path.join(input_directory, filename))
+    return images_list
+
+
+def disparity_map(image1, image2):
+    assert image1.shape == image2.shape
     # disparity settings
     window_size = 5
     min_disp = 0
@@ -26,16 +36,20 @@ for i in range(1,40) :
 
     print('computing disparity...')
     disp1 = stereo.compute(img1, img2)
-
     disp1 = cv2.normalize(src=disp1, dst=disp1, beta=0, alpha=255, norm_type=cv2.NORM_MINMAX);
     disp1 = np.uint8(disp1)
-    #cv2.imshow('Disparity Map', cv2.resize(disp1,None,None,0.3,0.3))
-    cv2.imwrite("images/dispblend ("+str(i)+").jpg",disp1)
-    print(i)
-    #cv2.waitKey()
-    #cv2.destroyAllWindows()
+    return disp1
 
-def disparity_map(image2, image1, line_coord):
-    assert image1.shape == image2.shape
-    assert 0 <= line_coord < image1.shape[0]
-    print(image1)
+
+input_directory = "input_images"
+output_directory = "output_images"
+if not os.path.exists(output_directory):
+    os.mkdir(output_directory)
+image_files = find_image_files(input_directory)
+for i in range(len(image_files) - 1):
+    print("Loading "+image_files[i]+" and "+image_files[i+1]+" ...")
+    img1 = cv2.imread(image_files[i])
+    img2 = cv2.imread(image_files[i + 1])
+    disp = disparity_map(img1, img2)
+    cv2.imwrite(os.path.join(output_directory,"disp(" + str(i) + ").jpg"), disp)
+    print("Output saved in "+os.path.join(output_directory,"disp(" + str(i) + ").jpg"))
